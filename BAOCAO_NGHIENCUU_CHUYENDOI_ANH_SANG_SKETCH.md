@@ -152,60 +152,99 @@ Trong đó:
 
 #### 3.1.3. Các bước thực hiện
 
+**Location trong code:** `sketch_converter.py:24-98`
+
+**Bước 0: Convert to Grayscale (nếu cần)**
+```python
+# File: sketch_converter.py, line 41-44
+if len(image.shape) == 3:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+else:
+    gray = image.copy()
+```
+- Kiểm tra ảnh có phải màu không (3 channels)
+- Nếu màu → Chuyển sang grayscale
+- Nếu đã grayscale → Copy để không ảnh hưởng ảnh gốc
+
 **Bước 1: Preprocessing với CLAHE**
 ```python
+# File: sketch_converter.py, line 66-68
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 enhanced = clahe.apply(gray)
 ```
-- Cân bằng histogram cục bộ
+- Cân bằng histogram cục bộ (adaptive)
 - Cải thiện contrast vùng sáng
-- Tránh over-amplification
+- Tránh over-amplification với clipLimit=2.0
+- Chia ảnh thành grid 8×8 tiles
 
 **Bước 2: Invert ảnh gốc**
 ```python
+# File: sketch_converter.py, line 70-71
 inverted = cv2.bitwise_not(enhanced)
 ```
 - Đảo ngược giá trị pixel: 0→255, 255→0
 - Tạo ảnh âm bản (negative)
+- Cần thiết cho công thức dodge-burn
 
 **Bước 3: Gaussian Blur**
 ```python
-blurred = cv2.GaussianBlur(inverted, (blur_ksize, blur_ksize), sigma)
+# File: sketch_converter.py, line 73-79
+if blur_ksize % 2 == 0:
+    blur_ksize += 1  # Ensure odd number
+
+blurred = cv2.GaussianBlur(inverted, (blur_ksize, blur_ksize),
+                           sigmaX=sigma, sigmaY=sigma)
 ```
 - Làm mờ ảnh đã invert
-- Kernel size phải là số lẻ (ví dụ: 21×21)
-- Tạo hiệu ứng shading mềm
+- Kernel size phải là số lẻ (OpenCV requirement)
+- Default: 21×21 (khá lớn, tạo shading mềm)
+- sigma=0 → OpenCV tự tính từ kernel size
 
 **Bước 4: Invert blur**
 ```python
+# File: sketch_converter.py, line 81-82
 inverted_blurred = cv2.bitwise_not(blurred)
 ```
 - Đảo ngược ảnh đã blur
-- Chuẩn bị cho phép chia
+- Chuẩn bị cho phép chia (dùng làm mẫu số)
 
-**Bước 5: Prevent division by zero**
+**Bước 5: Prevent division by very small numbers**
 ```python
+# File: sketch_converter.py, line 84-86
 inverted_blurred = np.where(inverted_blurred < 10, 10, inverted_blurred)
 ```
-- Tránh chia cho số quá nhỏ
-- Ngăn chặn đốm trắng (white spots)
-- Threshold tối thiểu = 10
+- Tránh chia cho số quá nhỏ (< 10)
+- Ngăn chặn đốm trắng (white spots/saturation)
+- Threshold tối thiểu = 10 (empirical value)
+- Đảm bảo sketch max = Gray × 256 / 10 ≈ 25.6 × Gray
 
-**Bước 6: Divide to create sketch**
+**Bước 6: Divide to create sketch effect**
 ```python
+# File: sketch_converter.py, line 88-90
+# Công thức: Sketch = (Gray × 256) / (255 - Blurred)
 sketch = cv2.divide(enhanced, inverted_blurred, scale=256.0)
 ```
 - Phép chia với scale factor 256
-- Tạo hiệu ứng sketch chính
+- Tạo hiệu ứng sketch chính (dodge-burn blending)
+- cv2.divide tự động saturate về [0, 255]
 
-**Bước 7: Clip và Post-processing**
+**Bước 7: Clip values**
 ```python
+# File: sketch_converter.py, line 92-93
 sketch = np.clip(sketch, 0, 255).astype(np.uint8)
+```
+- Đảm bảo values trong range [0, 255]
+- Convert về uint8 (8-bit unsigned integer)
+- Prevent overflow
+
+**Bước 8: Post-processing blur**
+```python
+# File: sketch_converter.py, line 95-96
 sketch = cv2.GaussianBlur(sketch, (3, 3), 0.3)
 ```
-- Clip values về [0, 255]
-- Blur nhẹ để giảm pixel noise
-- Giữ độ sắc nét
+- Blur rất nhẹ (kernel 3×3, sigma=0.3)
+- Giảm pixel noise/aliasing
+- Giữ độ sắc nét (không làm mờ nhiều)
 
 #### 3.1.4. Ưu điểm
 
@@ -242,60 +281,138 @@ Trong đó:
 
 #### 3.2.3. Các bước thực hiện
 
-**Bước 1: Tạo Dodge-Burn sketch**
+**Location trong code:** `sketch_converter.py:100-144` + `edge_detector.py:50-89`
+
+Combined method có **2 nhánh song song** (Branch A và B), sau đó **merge và post-processing**.
+
+---
+
+**BƯỚC 0: Convert to Grayscale**
 ```python
+# File: sketch_converter.py, line 41-44
+# (Chung cho cả 2 nhánh)
+if len(image.shape) == 3:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+```
+
+---
+
+**BRANCH A: Dodge-Burn Sketch** (9 bước như phương pháp 1)
+```python
+# File: sketch_converter.py, line 112-113
 sketch_db = self._dodge_burn(gray, blur_ksize=blur_ksize)
 ```
-- Sử dụng lại phương pháp 1
-- Đã có CLAHE và clipping
+- Sử dụng lại phương pháp 1 (đã có CLAHE, invert, blur, divide, clip, post-blur)
+- Kết quả: Ảnh với shading mềm mại
 
-**Bước 2: Phát hiện biên với Canny**
+---
+
+**BRANCH B: Canny Edge Detection** (6 bước)
+
+**B.1: CLAHE Preprocessing**
 ```python
-edges = self.edge_detector.detect(gray, low_threshold=low, high_threshold=high)
+# File: edge_detector.py, line 63-65
+clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+enhanced = clahe.apply(image)
 ```
-- Adaptive thresholding
-- CLAHE preprocessing
-- Bilateral filter
+- Cải thiện contrast vùng sáng (riêng cho edge detection)
 
-**Bước 3: Alpha blending**
+**B.2: Bilateral Filter**
 ```python
+# File: edge_detector.py, line 67-68
+denoised = cv2.bilateralFilter(enhanced, 9, 75, 75)
+```
+- Giảm nhiễu nhưng GIỮ NGUYÊN edges
+- d=9: Diameter vùng lân cận
+- sigmaColor=75, sigmaSpace=75
+
+**B.3: Adaptive Threshold Calculation**
+```python
+# File: edge_detector.py, line 71-81
+median = np.median(denoised)
+sigma = 0.33  # Recommended value
+
+low_threshold = int(max(0, (1.0 - sigma) * median))
+high_threshold = int(min(255, (1.0 + sigma) * median))
+
+# Ensure reasonable range
+low_threshold = max(30, low_threshold)
+high_threshold = min(200, high_threshold)
+```
+- Tự động tính threshold dựa trên median của ảnh
+- sigma=0.33 cho kết quả tốt nhất (từ Canny paper)
+
+**B.4: Canny Edge Detection**
+```python
+# File: edge_detector.py, line 83
+edges = cv2.Canny(denoised, low_threshold, high_threshold)
+```
+- Bên trong cv2.Canny có 4 bước:
+  1. Gaussian smoothing
+  2. Gradient calculation (Sobel)
+  3. Non-maximum suppression
+  4. Hysteresis thresholding
+- Kết quả: Binary edges (0 và 255)
+
+**B.5: Anti-aliasing Blur**
+```python
+# File: edge_detector.py, line 87
+edges_smooth = cv2.GaussianBlur(edges, (3, 3), 0.3)
+```
+- Làm mượt edges nhẹ
+- Giảm pixel noise
+
+---
+
+**MERGE & POST-PROCESSING** (5 bước)
+
+**Bước 1: Alpha Blending**
+```python
+# File: sketch_converter.py, line 121-123
 sketch = cv2.addWeighted(sketch_db, alpha, edges, beta, 0)
+# alpha=0.7, beta=0.3
 ```
-- Kết hợp 2 ảnh với trọng số
-- 70% shading + 30% edges
-- Gamma = 0 (không offset)
+- Trộn Dodge-Burn (70%) + Edges (30%)
+- Công thức: Result = 0.7×DB + 0.3×Edges
+- Gamma=0 (không offset)
 
-**Bước 4: Bilateral filter**
+**Bước 2: Bilateral Filter**
 ```python
+# File: sketch_converter.py, line 125-127
 sketch = cv2.bilateralFilter(sketch, 5, 50, 50)
 ```
 - Edge-preserving smoothing
-- Giảm đốm trắng
-- Giữ nguyên edges
+- Giảm đốm trắng từ dodge-burn
+- d=5, sigmaColor=50, sigmaSpace=50
 
-**Bước 5: Unsharp masking**
+**Bước 3: Unsharp Masking**
 ```python
+# File: sketch_converter.py, line 129-133
 gaussian = cv2.GaussianBlur(sketch, (5, 5), 1.5)
 sketch = cv2.addWeighted(sketch, 2.0, gaussian, -1.0, 0)
 ```
 - Tăng độ sắc nét
-- Sharp = Original×2.0 - Blurred×1.0
-- Công thức: S = I + (I - B) = 2I - B
+- Công thức: Sharp = Original×2.0 - Blurred×1.0
+- Tương đương: S = I + (I - B), với amount=1.0
 
-**Bước 6: Morphological gradient**
+**Bước 4: Morphological Gradient**
 ```python
+# File: sketch_converter.py, line 135-139
 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
 gradient = cv2.morphologyEx(sketch, cv2.MORPH_GRADIENT, kernel)
 sketch = cv2.addWeighted(sketch, 0.9, gradient, 0.1, 0)
 ```
 - Tăng cường edges
-- Gradient = Dilation - Erosion
-- Blend 10% vào sketch
+- Gradient = Dilation(sketch) - Erosion(sketch)
+- Blend 10% gradient vào sketch (90% original + 10% gradient)
 
-**Bước 7: Final clipping**
+**Bước 5: Final Clipping**
 ```python
+# File: sketch_converter.py, line 141-142
 sketch = np.clip(sketch, 0, 255).astype(np.uint8)
 ```
+- Đảm bảo values trong [0, 255]
+- Convert về uint8
 
 #### 3.2.4. Ưu điểm
 

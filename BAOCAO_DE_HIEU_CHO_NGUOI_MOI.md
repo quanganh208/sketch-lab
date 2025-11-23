@@ -111,56 +111,94 @@ Tưởng tượng bạn có một bức ảnh in trên giấy, và một cây đ
 
 #### Các bước đơn giản (không cần hiểu code)
 
-**Bước 1: Biến ảnh màu thành đen trắng**
+**📍 Location trong code:** `sketch_converter.py` dòng 24-98
+
+**Bước 0: Biến ảnh màu thành đen trắng (nếu cần)**
 ```
 Ảnh gốc: 🌈 (nhiều màu)
         ↓
 Ảnh đen trắng: ⬜⬛ (chỉ có trắng đen)
+
+Code: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 ```
 *Tại sao?* Tranh vẽ bút chì không có màu!
 
-**Bước 2: Cải thiện độ sáng tối**
+**Bước 1: Cải thiện độ sáng tối (CLAHE)**
 ```
 Ví dụ:
 - Ảnh ban đầu: Mặt quá tối, nền quá sáng
 - Sau khi cải thiện: Mặt sáng vừa, nền tối vừa
-```
-*Tại sao?* Để nhìn rõ chi tiết hơn
 
-**Bước 3: "Đảo ngược" ảnh (như âm bản phim)**
+Kỹ thuật: CLAHE (Contrast Limited Adaptive Histogram Equalization)
+```
+*Tại sao?* Để nhìn rõ chi tiết hơn, đặc biệt vùng tối và vùng sáng
+
+**Bước 2: "Đảo ngược" ảnh lần 1 (như âm bản phim)**
 ```
 Trước: Trời sáng ⬜, cây tối ⬛
 Sau:  Trời tối ⬛, cây sáng ⬜
-```
-*Tại sao?* Cần thiết cho công thức toán học sau này
 
-**Bước 4: Làm mờ ảnh đã đảo**
+Code: cv2.bitwise_not(enhanced)
+```
+*Tại sao?* Cần thiết cho công thức dodge-burn
+
+**Bước 3: Làm mờ ảnh đã đảo (Gaussian Blur)**
 ```
 Ảnh đảo (sắc nét):  ▓▓▓▓
                     ↓
 Ảnh mờ:            ░░░░
+
+Code: GaussianBlur với kernel 21×21
 ```
 *Tại sao?* Tạo hiệu ứng mềm mại, giống vẽ tay
 
-**Bước 5: Đảo lại lần nữa**
+**Bước 4: Đảo ngược lần 2**
 ```
 Ảnh mờ (đã đảo):  ⬛⬛⬛
                   ↓
 Đảo lại:         ⬜⬜⬜
+
+Code: cv2.bitwise_not(blurred)
 ```
+*Tại sao?* Chuẩn bị cho phép chia
 
-**Bước 6: "Chia" ảnh gốc cho ảnh đã xử lý**
-
-Đây là bước **MA THUẬT** tạo hiệu ứng sketch!
-
+**Bước 5: Đảm bảo không chia cho số quá nhỏ**
 ```
-Công thức (đơn giản hóa):
-Sketch = Ảnh gốc / Ảnh đã xử lý
+Nếu pixel < 10 → Đặt = 10
+
+Code: np.where(pixel < 10, 10, pixel)
+```
+*Tại sao?* Tránh tạo đốm trắng lỗi (white spots)
+
+**Bước 6: "Chia" ảnh gốc cho ảnh đã xử lý (MA THUẬT!)**
+```
+Công thức:
+Sketch = (Ảnh gốc × 256) / Ảnh đã xử lý
+
+Code: cv2.divide(enhanced, inverted_blurred, scale=256.0)
 
 Giải thích:
 - Chỗ nào ảnh gốc SÁNG, ảnh xử lý TỐI → Sketch RẤT SÁNG ✨
 - Chỗ nào ảnh gốc TỐI, ảnh xử lý SÁNG → Sketch TỐI 🖤
 ```
+*Tại sao?* Đây là công thức chính tạo hiệu ứng sketch!
+
+**Bước 7: Giới hạn giá trị về [0, 255]**
+```
+Nếu > 255 → Đặt = 255
+Nếu < 0   → Đặt = 0
+
+Code: np.clip(sketch, 0, 255)
+```
+*Tại sao?* Đảm bảo giá trị pixel hợp lệ
+
+**Bước 8: Làm mờ nhẹ cuối cùng (Post-processing)**
+```
+Blur rất nhẹ với kernel 3×3
+
+Code: GaussianBlur(sketch, (3, 3), 0.3)
+```
+*Tại sao?* Giảm pixel noise nhưng vẫn giữ sắc nét
 
 **Kết quả:**
 ```
@@ -168,20 +206,41 @@ Trước:  📸 (ảnh chụp thường)
 Sau:    ✏️ (tranh vẽ bút chì)
 ```
 
-#### Ví dụ cụ thể với số
+#### Ví dụ cụ thể: Theo dõi 1 pixel qua 9 bước
 
 Giả sử có 1 pixel (điểm ảnh):
 
 ```
 Giá trị pixel trong ảnh: từ 0 (đen) đến 255 (trắng)
 
-Bước 1: Pixel gốc = 100 (xám nhạt)
-Bước 2: Sau cải thiện = 120 (sáng hơn chút)
-Bước 3: Đảo ngược = 255 - 120 = 135
-Bước 4: Sau làm mờ = 130 (trung bình với hàng xóm)
-Bước 5: Đảo lại = 255 - 130 = 125
-Bước 6: Chia = (120 × 256) / 125 = 245 (rất sáng!)
+Bước 0: Pixel gốc màu RGB(100,100,100)
+        → Grayscale = 100 (xám nhạt)
 
+Bước 1: CLAHE cải thiện
+        → 100 → 120 (sáng hơn chút)
+
+Bước 2: Đảo ngược lần 1
+        → 120 → 255-120 = 135
+
+Bước 3: Làm mờ (trung bình với hàng xóm)
+        → 135 → 130
+
+Bước 4: Đảo ngược lần 2
+        → 130 → 255-130 = 125
+
+Bước 5: Kiểm tra minimum
+        → 125 > 10 ✓ (OK, giữ nguyên 125)
+
+Bước 6: Chia (MA THUẬT!)
+        → (120 × 256) / 125 = 245.76 ≈ 246
+
+Bước 7: Clip
+        → 246 nằm trong [0, 255] ✓ (giữ nguyên)
+
+Bước 8: Post-blur nhẹ
+        → 246 → 245 (giảm 1 đơn vị)
+
+→ KẾT QUẢ CUỐI: Pixel = 245 (rất sáng!)
 → Pixel này sẽ là điểm SÁNG trong tranh vẽ
 ```
 
@@ -288,6 +347,143 @@ Nếu viền "nghi ngờ" đứng 1 mình:
 Ảnh gốc: 📸
         ↓
 Chỉ còn viền: 🖼️ (như ảnh phác thảo)
+```
+
+#### Các bước thực hiện theo code
+
+**📍 Location trong code:** `sketch_converter.py:100-144` + `edge_detector.py:50-89`
+
+Combined method hoạt động như 2 họa sĩ vẽ CÙNG LÚC, sau đó trộn kết quả:
+
+---
+
+**BƯỚC 0: Biến ảnh thành đen trắng (chung cho 2 nhánh)**
+```
+Ảnh màu → Ảnh đen trắng
+```
+
+---
+
+**NHÁNH A - Họa sĩ A: Dodge-Burn** (9 bước như Cách 1)
+
+```
+Họa sĩ A làm:
+1. Cải thiện độ sáng (CLAHE)
+2-8. Các bước Dodge-Burn (như đã học ở Cách 1)
+
+Kết quả: Ảnh với tô bóng mềm mại 🎨
+```
+
+---
+
+**NHÁNH B - Họa sĩ B: Vẽ viền (Canny Edge Detection)**
+
+Họa sĩ B làm 6 bước để tìm viền:
+
+**B.1: Cải thiện độ sáng (CLAHE riêng)**
+```
+Cũng dùng CLAHE, nhưng cho edge detection
+Code: cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+```
+
+**B.2: Lọc nhiễu nhưng giữ viền (Bilateral Filter)**
+```
+Làm mượt ảnh NHƯNG không làm mờ viền
+Code: cv2.bilateralFilter(enhanced, 9, 75, 75)
+
+Khác với làm mờ thường:
+- Làm mờ thường: Mọi thứ đều mờ
+- Bilateral: Chỉ mờ chỗ phẳng, GIỮ viền
+```
+
+**B.3: Tính ngưỡng tự động (Adaptive Threshold)**
+```
+Máy tính TỰ ĐỘNG tính threshold dựa trên ảnh:
+
+median = Giá trị giữa của ảnh
+low = 67% của median
+high = 133% của median
+
+Ví dụ: Nếu median = 100
+→ low = 67, high = 133
+```
+
+**B.4: Tìm viền (Canny)**
+```
+cv2.Canny(image, low=67, high=133)
+
+Bên trong Canny tự động làm 4 việc:
+1. Làm mờ Gaussian
+2. Tính độ dốc (gradient)
+3. Giữ điểm dốc nhất
+4. Nối viền
+
+Kết quả: Ảnh chỉ còn viền (đen trắng)
+```
+
+**B.5: Làm mượt viền nhẹ (Anti-aliasing)**
+```
+Blur rất nhẹ để viền mượt hơn
+Code: GaussianBlur(edges, (3,3), 0.3)
+```
+
+**Kết quả nhánh B:** Ảnh chỉ có viền 🖼️
+
+---
+
+**TRỘN VÀ LÀM ĐẸP** (5 bước)
+
+**Bước 1: Trộn 2 nhánh (Alpha Blending)**
+```
+Kết quả = 70% Họa sĩ A + 30% Họa sĩ B
+        = 0.7 × Dodge-Burn + 0.3 × Edges
+
+Code: cv2.addWeighted(sketch_db, 0.7, edges, 0.3, 0)
+```
+
+**Bước 2: Lọc mượt giữ viền (Bilateral lần 2)**
+```
+Giảm đốm trắng từ dodge-burn
+Nhưng vẫn GIỮ viền rõ ràng
+
+Code: cv2.bilateralFilter(sketch, 5, 50, 50)
+```
+
+**Bước 3: Tăng độ sắc nét (Unsharp Masking)**
+```
+Tạo bản mờ → So sánh với gốc → Thêm chi tiết
+
+Blur = GaussianBlur(sketch)
+Sharp = sketch×2.0 - Blur×1.0
+
+→ Ảnh sắc nét hơn!
+```
+
+**Bước 4: Làm nổi viền (Morphological Gradient)**
+```
+Phồng ảnh → Co ảnh → Lấy phần chênh lệch = Viền!
+Trộn 10% viền vào ảnh
+
+Code:
+gradient = Dilation - Erosion
+Result = 90% sketch + 10% gradient
+```
+
+**Bước 5: Giới hạn giá trị cuối cùng**
+```
+Đảm bảo pixel trong [0, 255]
+Code: np.clip(sketch, 0, 255)
+```
+
+**KẾT QUẢ CUỐI:**
+```
+Ảnh có cả:
+- Tô bóng mềm mại (từ Dodge-Burn)
+- Viền rõ ràng (từ Canny)
+- Độ sắc nét cao (từ Unsharp)
+- Viền được tăng cường (từ Morphological)
+
+→ Tranh sketch đẹp nhất! ✏️
 ```
 
 #### Kết hợp lại
