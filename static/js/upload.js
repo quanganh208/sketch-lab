@@ -113,7 +113,14 @@ async function handleFile(file) {
     const validation = validateImageFile(file);
 
     if (!validation.isValid) {
-        showMessage(validation.error, 'error');
+        // Show error message
+        const messageDiv = document.getElementById('message');
+        if (messageDiv) {
+            messageDiv.textContent = validation.error;
+            messageDiv.className = 'message error';
+            messageDiv.classList.remove('hidden');
+            setTimeout(() => messageDiv.classList.add('hidden'), 5000);
+        }
         return;
     }
 
@@ -161,13 +168,16 @@ async function uploadFile(file) {
     formData.append('file', file);
 
     // Show loading
-    showLoading();
-    hideMessage();
+    const loadingDiv = document.getElementById('loading');
+    const messageDiv = document.getElementById('message');
+    const processBtn = document.getElementById('process-btn');
+    const controlsSection = document.getElementById('controls-section');
+
+    if (loadingDiv) loadingDiv.classList.remove('hidden');
+    if (messageDiv) messageDiv.classList.add('hidden');
 
     // Disable process button while uploading
-    if (typeof disableProcessing === 'function') {
-        disableProcessing();
-    }
+    if (processBtn) processBtn.disabled = true;
 
     try {
         const response = await fetch('/upload', {
@@ -180,23 +190,40 @@ async function uploadFile(file) {
         if (response.ok && data.success) {
             console.log('Upload successful:', data);
 
-            showMessage('Upload thành công!', 'success');
-
-            // Enable processing with uploaded filename
-            if (typeof enableProcessing === 'function') {
-                enableProcessing(data.filename);
+            // Show success message
+            if (messageDiv) {
+                messageDiv.textContent = 'Upload thành công!';
+                messageDiv.className = 'message success';
+                messageDiv.classList.remove('hidden');
+                setTimeout(() => messageDiv.classList.add('hidden'), 3000);
             }
+
+            // Enable processing - store filename globally
+            window.uploadedFilename = data.filename;
+
+            // Enable process button
+            if (processBtn) processBtn.disabled = false;
+
+            // Show controls section
+            if (controlsSection) controlsSection.classList.remove('hidden');
         } else {
             throw new Error(data.error || 'Upload thất bại');
         }
     } catch (error) {
         console.error('Upload error:', error);
-        showMessage('Lỗi khi upload: ' + error.message, 'error');
+
+        // Show error message
+        if (messageDiv) {
+            messageDiv.textContent = 'Lỗi khi upload: ' + error.message;
+            messageDiv.className = 'message error';
+            messageDiv.classList.remove('hidden');
+        }
 
         // Clear preview on error
         clearPreview();
     } finally {
-        hideLoading();
+        // Hide loading
+        if (loadingDiv) loadingDiv.classList.add('hidden');
     }
 }
 
@@ -238,4 +265,34 @@ function formatFileSize(bytes) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+/**
+ * Validate image file
+ * @param {File} file - File to validate
+ * @returns {Object} Validation result with isValid and error
+ */
+function validateImageFile(file) {
+    const maxSize = 16 * 1024 * 1024; // 16MB
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+
+    if (!file) {
+        return { isValid: false, error: 'Không có file được chọn' };
+    }
+
+    if (!allowedTypes.includes(file.type)) {
+        return {
+            isValid: false,
+            error: 'File không hợp lệ. Chỉ chấp nhận: PNG, JPG, JPEG'
+        };
+    }
+
+    if (file.size > maxSize) {
+        return {
+            isValid: false,
+            error: 'File quá lớn. Kích thước tối đa: 16MB'
+        };
+    }
+
+    return { isValid: true };
 }

@@ -3,8 +3,8 @@
  * Handles UI interactions and processing logic
  */
 
-// Global state
-let uploadedFilename = null;
+// Global state (accessible from upload.js too)
+window.uploadedFilename = null;
 
 // DOM Elements
 const processBtn = document.getElementById('process-btn');
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
  * Process image with selected algorithm
  */
 async function processImage() {
-    if (!uploadedFilename) {
+    if (!window.uploadedFilename) {
         showMessage('Vui lòng upload ảnh trước', 'error');
         return;
     }
@@ -63,7 +63,7 @@ async function processImage() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                filename: uploadedFilename,
+                filename: window.uploadedFilename,
                 algorithm: algorithm,
                 enhance: enhance
             })
@@ -145,7 +145,7 @@ function hideMessage() {
  * @param {string} filename - Uploaded filename
  */
 function enableProcessing(filename) {
-    uploadedFilename = filename;
+    window.uploadedFilename = filename;
 
     if (processBtn) {
         processBtn.disabled = false;
@@ -164,7 +164,7 @@ function enableProcessing(filename) {
  * Disable process button
  */
 function disableProcessing() {
-    uploadedFilename = null;
+    window.uploadedFilename = null;
 
     if (processBtn) {
         processBtn.disabled = true;
