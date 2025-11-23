@@ -98,16 +98,16 @@ class SketchConverter:
         return sketch
 
     def _combined(self, gray, blur_ksize=21, low=None, high=None,
-                  alpha=0.7, beta=0.3):
+                  alpha=0.9, beta=0.1):
         """
         Kết hợp dodge-burn và edge detection với xử lý vùng sáng
 
         Tạo sketch với:
-        - Shading mềm mại từ dodge-burn (70%) - đã cải thiện với CLAHE
-        - Biên rõ nét từ Canny (30%) - adaptive thresholding
-        - Xử lý đặc biệt cho vùng sáng
+        - Shading mềm mại từ dodge-burn (90%) - đã cải thiện với CLAHE
+        - Biên rõ nét từ Canny (10%) - adaptive thresholding
+        - Gamma correction để tăng độ sáng nền
 
-        Kết quả cân bằng giữa artistic và clarity
+        Kết quả cân bằng giữa artistic và clarity với nền sáng tương đương dodge-burn
         """
         # 1. Tạo sketch từ dodge-burn (đã có CLAHE và clipping)
         sketch_db = self._dodge_burn(gray, blur_ksize=blur_ksize)
@@ -119,24 +119,27 @@ class SketchConverter:
                                          high_threshold=high)
 
         # 3. Kết hợp với alpha blending
-        # alpha * sketch + beta * edges
+        # alpha * sketch + beta * edges (giảm beta để nền sáng hơn)
         sketch = cv2.addWeighted(sketch_db, alpha, edges, beta, 0)
 
         # 4. Áp dụng post-processing - cân bằng giữa mượt và sắc nét
         # a) Bilateral filter nhẹ để giảm đốm trắng, giữ edges
         sketch = cv2.bilateralFilter(sketch, 5, 50, 50)
 
-        # b) Unsharp masking mạnh để tăng độ sắc nét
+        # b) Unsharp masking nhẹ để tăng độ sắc nét
         # Tạo version mờ
         gaussian = cv2.GaussianBlur(sketch, (5, 5), 1.5)
-        # Sharp = Original×2.0 - Blurred×1.0 (tăng cường độ sharp)
-        sketch = cv2.addWeighted(sketch, 2.0, gaussian, -1.0, 0)
+        # Sharp = Original×1.3 - Blurred×0.3 (giảm cường độ để nền sáng hơn)
+        sketch = cv2.addWeighted(sketch, 1.3, gaussian, -0.3, 0)
 
-        # c) Morphological gradient để tăng cường edges
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-        gradient = cv2.morphologyEx(sketch, cv2.MORPH_GRADIENT, kernel)
-        # Blend gradient vào để làm rõ edges
-        sketch = cv2.addWeighted(sketch, 0.9, gradient, 0.1, 0)
+        # c) Gamma correction để tăng độ sáng nền
+        # Gamma > 1 làm sáng ảnh, Gamma < 1 làm tối ảnh
+        gamma = 1.15
+        sketch = np.clip(sketch, 0, 255).astype(np.uint8)
+        # Áp dụng gamma: output = (input/255)^(1/gamma) * 255
+        lookup_table = np.array([((i / 255.0) ** (1.0 / gamma)) * 255
+                                for i in range(256)]).astype(np.uint8)
+        sketch = cv2.LUT(sketch, lookup_table)
 
         # Ensure values are in valid range
         sketch = np.clip(sketch, 0, 255).astype(np.uint8)
