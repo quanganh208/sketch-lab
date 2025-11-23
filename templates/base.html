@@ -1,52 +1,61 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SketchLab - Chuyển đổi ảnh thành sketch với 6 thuật toán khác nhau">
-    <meta name="keywords" content="image to sketch, edge detection, computer vision, opencv">
-    <meta name="author" content="SketchLab">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="SketchLab - Chuyển đổi ảnh thành sketch với 6 thuật toán khác nhau"
+    />
+    <meta
+      name="keywords"
+      content="image to sketch, edge detection, computer vision, opencv"
+    />
+    <meta name="author" content="SketchLab" />
 
-    <title>{% block title %}SketchLab - Image to Sketch Converter{% endblock %}</title>
+    <title>
+      {% block title %}SketchLab - Image to Sketch Converter{% endblock %}
+    </title>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
 
     {% block extra_css %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
     <!-- Header -->
     <header class="header">
-        <div class="container">
-            <div class="nav">
-                <h1 class="logo">
-                    <a href="{{ url_for('index') }}">SketchLab</a>
-                </h1>
-                <nav class="nav-links">
-                    <a href="{{ url_for('index') }}" class="nav-link">Home</a>
-                    <a href="{{ url_for('about') }}" class="nav-link">About</a>
-                </nav>
-            </div>
+      <div class="container">
+        <div class="nav">
+          <h1 class="logo">
+            <a href="{{ url_for('index') }}">SketchLab</a>
+          </h1>
+          <nav class="nav-links">
+            <a href="{{ url_for('index') }}" class="nav-link">Home</a>
+            <a href="{{ url_for('about') }}" class="nav-link">About</a>
+          </nav>
         </div>
+      </div>
     </header>
 
     <!-- Main Content -->
     <main class="main-content">
-        <div class="container">
-            {% block content %}{% endblock %}
-        </div>
+      <div class="container">{% block content %}{% endblock %}</div>
     </main>
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 SketchLab. Dự án Xử lý ảnh - INT13146</p>
-            <p>Học viện Công nghệ Bưu chính Viễn thông</p>
-        </div>
+      <div class="container">
+        <p>&copy; 2025 SketchLab. Bài tập lớn môn Xử lý ảnh</p>
+        <p>Học viện Công nghệ Bưu chính Viễn thông</p>
+      </div>
     </footer>
 
     <!-- JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block extra_js %}{% endblock %}
-</body>
+  </body>
 </html>

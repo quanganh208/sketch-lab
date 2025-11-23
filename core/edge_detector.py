@@ -51,18 +51,46 @@ class EdgeDetector:
         else:
             raise ValueError(f"Unknown method: {self.method}")
 
-    def _canny(self, image, low_threshold=50, high_threshold=150):
+    def _canny(self, image, low_threshold=None, high_threshold=None):
         """
-        Canny edge detection
+        Canny edge detection with adaptive thresholding
 
         Thuật toán tốt nhất với 4 bước:
-        1. Gaussian smoothing
-        2. Gradient calculation
-        3. Non-maximum suppression
-        4. Hysteresis thresholding
+        1. CLAHE preprocessing để cải thiện vùng sáng
+        2. Gaussian smoothing
+        3. Gradient calculation
+        4. Non-maximum suppression
+        5. Adaptive hysteresis thresholding
+
+        Nếu không cung cấp threshold, sẽ tự động tính dựa trên median
         """
-        edges = cv2.Canny(image, low_threshold, high_threshold)
-        return edges
+        # Apply CLAHE để cải thiện contrast vùng sáng
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced = clahe.apply(image)
+
+        # Apply bilateral filter để giảm nhiễu nhưng giữ edges
+        denoised = cv2.bilateralFilter(enhanced, 9, 75, 75)
+
+        # Adaptive thresholding based on image statistics
+        if low_threshold is None or high_threshold is None:
+            # Tính threshold tự động từ median
+            median = np.median(denoised)
+            sigma = 0.33  # Recommended sigma value
+
+            low_threshold = int(max(0, (1.0 - sigma) * median))
+            high_threshold = int(min(255, (1.0 + sigma) * median))
+
+            # Ensure reasonable thresholds
+            low_threshold = max(30, low_threshold)
+            high_threshold = min(200, high_threshold)
+
+        edges = cv2.Canny(denoised, low_threshold, high_threshold)
+
+        # Apply very light Gaussian blur for anti-aliasing only
+        # Chỉ làm mượt nhẹ để giảm pixel, không làm mờ
+        edges_smooth = cv2.GaussianBlur(edges, (3, 3), 0.3)
+
+        return edges_smooth
 
     def _sobel(self, image, ksize=3):
         """
