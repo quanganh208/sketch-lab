@@ -26,11 +26,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup file input change
     fileInput.addEventListener('change', handleFileSelect);
 
-    // Make drop zone clickable
+    // Make drop zone clickable (except when clicking on button or input)
     dropZone.addEventListener('click', function(e) {
-        if (e.target !== fileInput) {
-            fileInput.click();
+        // Prevent double-trigger if clicking on button or input
+        if (e.target.tagName === 'BUTTON' || e.target === fileInput) {
+            return;
         }
+        // Don't trigger if clicking inside button
+        if (e.target.closest('button')) {
+            return;
+        }
+        fileInput.click();
     });
 });
 

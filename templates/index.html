@@ -45,40 +45,10 @@
         <div class="form-group">
             <label for="algorithm" class="label">Phương pháp xử lý:</label>
             <select id="algorithm" class="select">
-                <optgroup label="Sketch Conversion (Khuyên dùng)">
-                    <option value="combined" selected>Combined Sketch - Kết hợp (Recommended)</option>
-                    <option value="dodge_burn">Dodge-Burn Sketch - Shading tự nhiên</option>
-                    <option value="edge_based">Edge-Based Sketch - Tập trung đường nét</option>
-                </optgroup>
-                <optgroup label="Edge Detection">
-                    <option value="canny">Canny Edge - Chất lượng cao nhất</option>
-                    <option value="sobel">Sobel Edge - Nhanh, đơn giản</option>
-                    <option value="laplacian">Laplacian Edge - Mọi hướng</option>
-                </optgroup>
+                <option value="combined" selected>Combined Sketch - Chất lượng cao nhất (Recommended)</option>
+                <option value="dodge_burn">Dodge-Burn Sketch - Artistic style</option>
             </select>
-        </div>
-
-        <!-- Enhancement Options -->
-        <div class="form-group">
-            <label class="label">Tùy chọn nâng cao:</label>
-            <div class="checkbox-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" name="enhance" value="denoise" checked>
-                    <span>Denoise - Loại bỏ nhiễu</span>
-                </label>
-                <label class="checkbox-label">
-                    <input type="checkbox" name="enhance" value="connect">
-                    <span>Connect Lines - Nối đường gãy</span>
-                </label>
-                <label class="checkbox-label">
-                    <input type="checkbox" name="enhance" value="thin">
-                    <span>Thin Lines - Làm mỏng nét</span>
-                </label>
-                <label class="checkbox-label">
-                    <input type="checkbox" name="enhance" value="thicken">
-                    <span>Thicken Lines - Làm đậm nét</span>
-                </label>
-            </div>
+            <p class="help-text">Tự động áp dụng: Denoise (loại bỏ nhiễu)</p>
         </div>
 
         <!-- Process Button -->

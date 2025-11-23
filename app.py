@@ -110,7 +110,8 @@ def process():
         # Get parameters
         filename = data.get('filename')
         algorithm = data.get('algorithm', 'combined')
-        enhance_options = data.get('enhance', [])
+        # Auto apply denoise for best quality
+        enhance_options = ['denoise']
 
         if not filename:
             return jsonify({'error': 'Thiếu tên file'}), 400
@@ -132,15 +133,13 @@ def process():
         # Start timing
         start_time = time.time()
 
-        # Process based on algorithm
-        if algorithm in ['canny', 'sobel', 'laplacian']:
-            # Edge detection
-            detector = EdgeDetector(method=algorithm)
-            result = detector.detect(image)
-        else:
-            # Sketch conversion
-            converter = SketchConverter(method=algorithm)
-            result = converter.convert(image)
+        # Validate algorithm
+        if algorithm not in ['combined', 'dodge_burn']:
+            return jsonify({'error': f'Thuật toán không hợp lệ: {algorithm}'}), 400
+
+        # Sketch conversion
+        converter = SketchConverter(method=algorithm)
+        result = converter.convert(image)
 
         # Enhancement if requested
         if enhance_options:
@@ -236,38 +235,14 @@ def get_algorithms():
         {
             'id': 'combined',
             'name': 'Combined Sketch',
-            'description': 'Kết hợp dodge-burn (70%) và edges (30%) - Recommended',
+            'description': 'Kết hợp dodge-burn (70%) và edges (30%) - Chất lượng cao nhất',
             'category': 'sketch'
         },
         {
             'id': 'dodge_burn',
             'name': 'Dodge-Burn Sketch',
-            'description': 'Sketch truyền thống với shading mềm mại',
+            'description': 'Sketch truyền thống với shading mềm mại - Artistic style',
             'category': 'sketch'
-        },
-        {
-            'id': 'edge_based',
-            'name': 'Edge-Based Sketch',
-            'description': 'Tập trung vào đường nét, rõ ràng',
-            'category': 'sketch'
-        },
-        {
-            'id': 'canny',
-            'name': 'Canny Edge Detection',
-            'description': 'Phát hiện biên chất lượng cao nhất',
-            'category': 'edge'
-        },
-        {
-            'id': 'sobel',
-            'name': 'Sobel Edge Detection',
-            'description': 'Phát hiện biên nhanh, đơn giản',
-            'category': 'edge'
-        },
-        {
-            'id': 'laplacian',
-            'name': 'Laplacian Edge Detection',
-            'description': 'Phát hiện biên theo mọi hướng',
-            'category': 'edge'
         }
     ]
 

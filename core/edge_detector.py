@@ -1,7 +1,7 @@
 """
 Edge Detection Module
-Implements Canny, Sobel, and Laplacian edge detection algorithms
-Based on SketchLab Report - Chapter 3 & 5
+Implements Canny edge detection algorithm
+Used for sketch conversion in Combined and Edge-Based methods
 """
 
 import cv2
@@ -16,20 +16,20 @@ class EdgeDetector:
         Parameters:
         -----------
         method : str
-            Phương pháp: 'canny', 'sobel', 'laplacian'
+            Phương pháp: 'canny' (only supported method)
         """
         self.method = method
 
     def detect(self, image, **params):
         """
-        Phát hiện biên trong ảnh
+        Phát hiện biên trong ảnh bằng Canny algorithm
 
         Parameters:
         -----------
         image : numpy.ndarray
             Ảnh đầu vào (grayscale hoặc color)
         params : dict
-            Tham số cho từng phương pháp
+            Tham số cho Canny
 
         Returns:
         --------
@@ -44,12 +44,8 @@ class EdgeDetector:
 
         if self.method == 'canny':
             return self._canny(gray, **params)
-        elif self.method == 'sobel':
-            return self._sobel(gray, **params)
-        elif self.method == 'laplacian':
-            return self._laplacian(gray, **params)
         else:
-            raise ValueError(f"Unknown method: {self.method}")
+            raise ValueError(f"Unknown method: {self.method}. Only 'canny' is supported.")
 
     def _canny(self, image, low_threshold=None, high_threshold=None):
         """
@@ -91,36 +87,3 @@ class EdgeDetector:
         edges_smooth = cv2.GaussianBlur(edges, (3, 3), 0.3)
 
         return edges_smooth
-
-    def _sobel(self, image, ksize=3):
-        """
-        Sobel edge detection
-
-        Sử dụng Sobel operator để tính gradient theo x và y
-        Sau đó tính magnitude để có biên
-        """
-        # Calculate gradients
-        sobelx = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=ksize)
-        sobely = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=ksize)
-
-        # Calculate magnitude
-        magnitude = np.sqrt(sobelx**2 + sobely**2)
-
-        # Normalize to 0-255
-        magnitude = np.uint8(magnitude / magnitude.max() * 255)
-
-        return magnitude
-
-    def _laplacian(self, image, ksize=3):
-        """
-        Laplacian edge detection
-
-        Sử dụng đạo hàm bậc 2 (Laplacian operator)
-        Nhạy cảm với nhiễu nhưng phát hiện theo mọi hướng
-        """
-        laplacian = cv2.Laplacian(image, cv2.CV_64F, ksize=ksize)
-
-        # Take absolute value and normalize
-        laplacian = np.uint8(np.absolute(laplacian))
-
-        return laplacian

@@ -36,52 +36,65 @@
 
     <!-- Algorithms -->
     <div class="card">
-        <h3 class="section-title">Các thuật toán</h3>
+        <h3 class="section-title">Thuật toán xử lý ảnh</h3>
 
         <div class="algorithm-section">
-            <h4 class="algorithm-title">1. Edge Detection (Phát hiện biên)</h4>
+            <h4 class="algorithm-title">1. Combined Sketch - Thuật toán chính (Recommended)</h4>
+            <p class="text">
+                Thuật toán tối ưu nhất, kết hợp nhiều kỹ thuật xử lý ảnh để tạo sketch chất lượng cao:
+            </p>
             <ul class="algorithm-list">
                 <li>
-                    <strong>Canny Edge Detection:</strong> Thuật toán phát hiện biên chất lượng cao nhất,
-                    sử dụng 4 bước: Gaussian smoothing, gradient calculation, non-maximum suppression,
-                    và hysteresis thresholding.
+                    <strong>Dodge-Burn Blending (70%):</strong> Tạo shading mềm mại tự nhiên như vẽ bút chì,
+                    sử dụng CLAHE preprocessing và Gaussian blur với clipping chống đốm trắng.
                 </li>
                 <li>
-                    <strong>Sobel Edge Detection:</strong> Sử dụng Sobel operator để tính gradient,
-                    nhanh và đơn giản, phù hợp cho real-time processing.
+                    <strong>Canny Edge Detection (30%):</strong> Phát hiện biên chất lượng cao với adaptive thresholding,
+                    tăng cường độ rõ nét của đường nét.
                 </li>
                 <li>
-                    <strong>Laplacian Edge Detection:</strong> Sử dụng đạo hàm bậc 2,
-                    phát hiện biên theo mọi hướng.
+                    <strong>Post-processing nâng cao:</strong>
+                    <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
+                        <li>Bilateral Filter: Giảm đốm trắng nhưng giữ nguyên edges</li>
+                        <li>Unsharp Masking (2.0x - 1.0x): Tăng độ sắc nét mạnh</li>
+                        <li>Morphological Gradient: Tăng cường edges với ellipse kernel</li>
+                        <li>Final Blending: 90% sketch + 10% gradient</li>
+                    </ul>
                 </li>
             </ul>
         </div>
 
         <div class="algorithm-section">
-            <h4 class="algorithm-title">2. Sketch Conversion (Chuyển đổi Sketch)</h4>
+            <h4 class="algorithm-title">2. Dodge-Burn Sketch - Artistic Style</h4>
+            <p class="text">
+                Thuật toán tạo hiệu ứng vẽ bút chì truyền thống với shading mềm mại:
+            </p>
             <ul class="algorithm-list">
                 <li>
-                    <strong>Dodge-Burn Sketch:</strong> Phương pháp truyền thống với shading mềm mại,
-                    tạo hiệu ứng vẽ bút chì tự nhiên.
+                    <strong>CLAHE Preprocessing:</strong> Cân bằng contrast, cải thiện vùng sáng/tối.
                 </li>
                 <li>
-                    <strong>Edge-Based Sketch:</strong> Tập trung vào đường nét rõ ràng,
-                    sử dụng Canny edge detection.
+                    <strong>Invert & Blur:</strong> Đảo ngược ảnh, áp dụng Gaussian blur (kernel 21x21).
                 </li>
                 <li>
-                    <strong>Combined Sketch (Recommended):</strong> Kết hợp 70% dodge-burn
-                    và 30% edges để có kết quả cân bằng giữa shading và clarity.
+                    <strong>Divide Blending:</strong> Công thức: Sketch = (Gray × 256) / (255 - Blurred).
+                </li>
+                <li>
+                    <strong>Clipping & Smoothing:</strong> Chống over-saturation, làm mượt nhẹ.
                 </li>
             </ul>
         </div>
 
         <div class="algorithm-section">
-            <h4 class="algorithm-title">3. Morphological Enhancement</h4>
+            <h4 class="algorithm-title">3. Denoise Enhancement - Tự động áp dụng</h4>
+            <p class="text">
+                Morphological Opening để loại bỏ nhiễu:
+            </p>
             <ul class="algorithm-list">
-                <li><strong>Denoise (Opening):</strong> Loại bỏ nhiễu nhỏ</li>
-                <li><strong>Connect Lines (Closing):</strong> Nối các đường gãy</li>
-                <li><strong>Thin Lines (Erosion):</strong> Làm mỏng nét vẽ</li>
-                <li><strong>Thicken Lines (Dilation):</strong> Làm đậm nét vẽ</li>
+                <li>
+                    <strong>Morphological Opening:</strong> Erosion + Dilation với ellipse kernel 3×3,
+                    loại bỏ các điểm nhiễu nhỏ trong khi giữ nguyên cấu trúc sketch.
+                </li>
             </ul>
         </div>
     </div>
@@ -109,13 +122,20 @@
     <div class="card">
         <h3 class="section-title">Hướng dẫn sử dụng</h3>
         <ol class="usage-list">
-            <li>Upload ảnh bằng cách kéo thả hoặc click chọn file</li>
-            <li>Chọn thuật toán xử lý (recommended: Combined Sketch)</li>
-            <li>Chọn enhancement options nếu muốn (Denoise được khuyên dùng)</li>
-            <li>Click "Xử lý ảnh" và đợi vài giây</li>
-            <li>Xem kết quả so sánh side-by-side</li>
-            <li>Tải về ảnh sketch nếu hài lòng</li>
+            <li><strong>Upload ảnh:</strong> Kéo thả hoặc click "Chọn File" (chấp nhận PNG, JPG, JPEG, tối đa 16MB)</li>
+            <li><strong>Chọn thuật toán:</strong>
+                <ul style="margin-top: 0.5rem; padding-left: 1.5rem;">
+                    <li>Combined Sketch (Recommended) - Chất lượng cao nhất</li>
+                    <li>Dodge-Burn Sketch - Artistic style</li>
+                </ul>
+            </li>
+            <li><strong>Xử lý:</strong> Click "Xử lý ảnh" - Denoise sẽ tự động được áp dụng</li>
+            <li><strong>Xem kết quả:</strong> So sánh ảnh gốc và sketch side-by-side</li>
+            <li><strong>Tải về:</strong> Click nút "Tải về" nếu hài lòng với kết quả</li>
         </ol>
+        <p class="text" style="margin-top: 1rem; font-style: italic; color: var(--gray-600);">
+            💡 Mẹo: Combined Sketch cho kết quả tốt nhất với hầu hết ảnh. Dodge-Burn phù hợp khi muốn shading mềm mại hơn.
+        </p>
     </div>
 
     <!-- References -->

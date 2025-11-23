@@ -1,7 +1,6 @@
 """
 Sketch Conversion Module
-Implements dodge-burn, edge-based, and combined sketch conversion methods
-Based on SketchLab Report - Chapter 4
+Implements dodge-burn and combined sketch conversion methods
 """
 
 import cv2
@@ -46,12 +45,10 @@ class SketchConverter:
 
         if self.method == 'dodge_burn':
             return self._dodge_burn(gray, **params)
-        elif self.method == 'edge_based':
-            return self._edge_based(gray, **params)
         elif self.method == 'combined':
             return self._combined(gray, **params)
         else:
-            raise ValueError(f"Unknown method: {self.method}")
+            raise ValueError(f"Unknown method: {self.method}. Only 'dodge_burn' and 'combined' are supported.")
 
     def _dodge_burn(self, gray, blur_ksize=21, sigma=0):
         """
@@ -96,26 +93,6 @@ class SketchConverter:
         sketch = np.clip(sketch, 0, 255).astype(np.uint8)
 
         # 7. Post-processing: Rất nhẹ để giảm pixel nhưng giữ sắc nét
-        sketch = cv2.GaussianBlur(sketch, (3, 3), 0.3)
-
-        return sketch
-
-    def _edge_based(self, gray, low=50, high=150):
-        """
-        Edge detection based sketch với edge smoothing
-
-        Sử dụng Canny edge detection để tạo sketch
-        Kết quả tập trung vào đường nét, rõ ràng nhưng ít shading
-        Thêm smoothing để đường nét mượt mà hơn
-        """
-        edges = self.edge_detector.detect(gray,
-                                         low_threshold=low,
-                                         high_threshold=high)
-
-        # Invert để có nền trắng, nét đen
-        sketch = cv2.bitwise_not(edges)
-
-        # Apply Gaussian blur rất nhẹ để anti-aliasing
         sketch = cv2.GaussianBlur(sketch, (3, 3), 0.3)
 
         return sketch

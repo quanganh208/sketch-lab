@@ -43,11 +43,7 @@ async function processImage() {
     // Get selected algorithm
     const algorithm = algorithmSelect.value;
 
-    // Get enhancement options
-    const enhanceCheckboxes = document.querySelectorAll('input[name="enhance"]:checked');
-    const enhance = Array.from(enhanceCheckboxes).map(cb => cb.value);
-
-    console.log('Processing with:', { algorithm, enhance });
+    console.log('Processing with algorithm:', algorithm);
 
     // Show loading, hide message
     showLoading();
@@ -64,8 +60,7 @@ async function processImage() {
             },
             body: JSON.stringify({
                 filename: window.uploadedFilename,
-                algorithm: algorithm,
-                enhance: enhance
+                algorithm: algorithm
             })
         });
 
@@ -177,47 +172,3 @@ function disableProcessing() {
     }
 }
 
-/**
- * Format file size to human readable
- * @param {number} bytes - File size in bytes
- * @returns {string} Formatted size
- */
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-}
-
-/**
- * Validate image file
- * @param {File} file - File to validate
- * @returns {Object} Validation result with isValid and error
- */
-function validateImageFile(file) {
-    const maxSize = 16 * 1024 * 1024; // 16MB
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-
-    if (!file) {
-        return { isValid: false, error: 'Không có file được chọn' };
-    }
-
-    if (!allowedTypes.includes(file.type)) {
-        return {
-            isValid: false,
-            error: 'File không hợp lệ. Chỉ chấp nhận: PNG, JPG, JPEG'
-        };
-    }
-
-    if (file.size > maxSize) {
-        return {
-            isValid: false,
-            error: 'File quá lớn. Kích thước tối đa: 16MB'
-        };
-    }
-
-    return { isValid: true };
-}
