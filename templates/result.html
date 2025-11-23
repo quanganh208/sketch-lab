@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Result - SketchLab{% endblock %}
+
+{% block content %}
+<div class="result-page">
+    <!-- Header -->
+    <div class="result-header">
+        <h2 class="hero-title">Kết quả xử lý</h2>
+        <div class="button-group">
+            <a href="{{ url_for('index') }}" class="btn-secondary">
+                <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Xử lý ảnh khác
+            </a>
+            <a href="{{ url_for('download', filename=output) }}" class="btn-primary" download>
+                <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Tải về
+            </a>
+        </div>
+    </div>
+
+    <!-- Image Comparison -->
+    <div class="comparison-container">
+        <!-- Original Image -->
+        <div class="comparison-side">
+            <div class="card">
+                <h3 class="section-title">Ảnh gốc</h3>
+                <div class="image-wrapper">
+                    <img src="{{ url_for('static', filename='uploads/original/' + original) }}"
+                         alt="Original"
+                         class="result-image"
+                         id="original-image">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sketch Result -->
+        <div class="comparison-side">
+            <div class="card">
+                <h3 class="section-title">Sketch</h3>
+                <div class="image-wrapper">
+                    <img src="{{ url_for('static', filename='uploads/processed/' + output) }}"
+                         alt="Sketch"
+                         class="result-image"
+                         id="sketch-image">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Info -->
+    <div class="card info-card">
+        <h3 class="section-title">Thông tin xử lý</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">File gốc:</span>
+                <span class="info-value">{{ original }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">File kết quả:</span>
+                <span class="info-value">{{ output }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips-card">
+        <h4 class="tips-title">💡 Gợi ý</h4>
+        <ul class="tips-list">
+            <li>Click vào ảnh để phóng to</li>
+            <li>Thử các thuật toán khác nhau để so sánh kết quả</li>
+            <li>Sử dụng enhancement options để tinh chỉnh sketch</li>
+            <li>Ảnh có độ phân giải cao sẽ cho kết quả tốt hơn</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Image zoom on click
+document.querySelectorAll('.result-image').forEach(img => {
+    img.addEventListener('click', function() {
+        this.classList.toggle('zoomed');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}About - SketchLab{% endblock %}
+
+{% block content %}
+<div class="about-page">
+    <div class="hero">
+        <h2 class="hero-title">Về SketchLab</h2>
+        <p class="hero-subtitle">
+            Ứng dụng chuyển đổi ảnh thành sketch sử dụng Computer Vision
+        </p>
+    </div>
+
+    <!-- Project Info -->
+    <div class="card">
+        <h3 class="section-title">Thông tin dự án</h3>
+        <p class="text">
+            SketchLab là ứng dụng web cho phép chuyển đổi ảnh thành sketch (ảnh vẽ phác thảo)
+            sử dụng các thuật toán xử lý ảnh tiên tiến từ Computer Vision.
+        </p>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Học phần:</span>
+                <span class="info-value">Xử lý ảnh (INT13146)</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Trường:</span>
+                <span class="info-value">Học viện Công nghệ Bưu chính Viễn thông</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Năm:</span>
+                <span class="info-value">2025</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Algorithms -->
+    <div class="card">
+        <h3 class="section-title">Các thuật toán</h3>
+
+        <div class="algorithm-section">
+            <h4 class="algorithm-title">1. Edge Detection (Phát hiện biên)</h4>
+            <ul class="algorithm-list">
+                <li>
+                    <strong>Canny Edge Detection:</strong> Thuật toán phát hiện biên chất lượng cao nhất,
+                    sử dụng 4 bước: Gaussian smoothing, gradient calculation, non-maximum suppression,
+                    và hysteresis thresholding.
+                </li>
+                <li>
+                    <strong>Sobel Edge Detection:</strong> Sử dụng Sobel operator để tính gradient,
+                    nhanh và đơn giản, phù hợp cho real-time processing.
+                </li>
+                <li>
+                    <strong>Laplacian Edge Detection:</strong> Sử dụng đạo hàm bậc 2,
+                    phát hiện biên theo mọi hướng.
+                </li>
+            </ul>
+        </div>
+
+        <div class="algorithm-section">
+            <h4 class="algorithm-title">2. Sketch Conversion (Chuyển đổi Sketch)</h4>
+            <ul class="algorithm-list">
+                <li>
+                    <strong>Dodge-Burn Sketch:</strong> Phương pháp truyền thống với shading mềm mại,
+                    tạo hiệu ứng vẽ bút chì tự nhiên.
+                </li>
+                <li>
+                    <strong>Edge-Based Sketch:</strong> Tập trung vào đường nét rõ ràng,
+                    sử dụng Canny edge detection.
+                </li>
+                <li>
+                    <strong>Combined Sketch (Recommended):</strong> Kết hợp 70% dodge-burn
+                    và 30% edges để có kết quả cân bằng giữa shading và clarity.
+                </li>
+            </ul>
+        </div>
+
+        <div class="algorithm-section">
+            <h4 class="algorithm-title">3. Morphological Enhancement</h4>
+            <ul class="algorithm-list">
+                <li><strong>Denoise (Opening):</strong> Loại bỏ nhiễu nhỏ</li>
+                <li><strong>Connect Lines (Closing):</strong> Nối các đường gãy</li>
+                <li><strong>Thin Lines (Erosion):</strong> Làm mỏng nét vẽ</li>
+                <li><strong>Thicken Lines (Dilation):</strong> Làm đậm nét vẽ</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Technologies -->
+    <div class="card">
+        <h3 class="section-title">Công nghệ sử dụng</h3>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <strong>Backend:</strong> Python, Flask
+            </div>
+            <div class="tech-item">
+                <strong>Image Processing:</strong> OpenCV, NumPy
+            </div>
+            <div class="tech-item">
+                <strong>Frontend:</strong> HTML5, CSS3, JavaScript
+            </div>
+            <div class="tech-item">
+                <strong>Deployment:</strong> Local (Localhost)
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage -->
+    <div class="card">
+        <h3 class="section-title">Hướng dẫn sử dụng</h3>
+        <ol class="usage-list">
+            <li>Upload ảnh bằng cách kéo thả hoặc click chọn file</li>
+            <li>Chọn thuật toán xử lý (recommended: Combined Sketch)</li>
+            <li>Chọn enhancement options nếu muốn (Denoise được khuyên dùng)</li>
+            <li>Click "Xử lý ảnh" và đợi vài giây</li>
+            <li>Xem kết quả so sánh side-by-side</li>
+            <li>Tải về ảnh sketch nếu hài lòng</li>
+        </ol>
+    </div>
+
+    <!-- References -->
+    <div class="card">
+        <h3 class="section-title">Tài liệu tham khảo</h3>
+        <ul class="ref-list">
+            <li>Gonzalez & Woods - Digital Image Processing (4th ed.)</li>
+            <li>OpenCV Documentation - opencv.org</li>
+            <li>Scikit-image Documentation</li>
+            <li>Đề cương học phần Xử lý ảnh - INT13146</li>
+        </ul>
+    </div>
+
+    <!-- Back Button -->
+    <div class="text-center">
+        <a href="{{ url_for('index') }}" class="btn-primary">
+            Bắt đầu sử dụng
+        </a>
+    </div>
+</div>
+{% endblock %}

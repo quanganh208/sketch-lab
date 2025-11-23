@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}SketchLab - Convert Image to Sketch{% endblock %}
+
+{% block content %}
+<div class="upload-page">
+    <!-- Hero Section -->
+    <div class="hero">
+        <h2 class="hero-title">Chuyển Ảnh Thành Sketch</h2>
+        <p class="hero-subtitle">
+            Upload ảnh và chọn thuật toán để tạo sketch nghệ thuật
+        </p>
+    </div>
+
+    <!-- Upload Zone -->
+    <div class="card">
+        <div id="drop-zone" class="drop-zone">
+            <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p class="drop-zone-text">Kéo thả ảnh vào đây</p>
+            <p class="drop-zone-subtext">hoặc</p>
+            <button type="button" class="btn-secondary" onclick="document.getElementById('file-input').click()">
+                Chọn File
+            </button>
+            <input type="file" id="file-input" accept="image/png,image/jpeg,image/jpg" hidden>
+            <p class="file-info">Chấp nhận: PNG, JPG, JPEG (tối đa 16MB)</p>
+        </div>
+
+        <!-- Preview Section -->
+        <div id="preview-section" class="preview-section hidden">
+            <h3 class="section-title">Ảnh đã chọn</h3>
+            <div class="preview-container">
+                <img id="preview-image" class="preview-image" alt="Preview">
+                <p id="file-name" class="file-name"></p>
+                <p id="file-size" class="file-size"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Algorithm Selection -->
+    <div id="controls-section" class="card hidden">
+        <h3 class="section-title">Chọn Thuật Toán</h3>
+
+        <div class="form-group">
+            <label for="algorithm" class="label">Phương pháp xử lý:</label>
+            <select id="algorithm" class="select">
+                <optgroup label="Sketch Conversion (Khuyên dùng)">
+                    <option value="combined" selected>Combined Sketch - Kết hợp (Recommended)</option>
+                    <option value="dodge_burn">Dodge-Burn Sketch - Shading tự nhiên</option>
+                    <option value="edge_based">Edge-Based Sketch - Tập trung đường nét</option>
+                </optgroup>
+                <optgroup label="Edge Detection">
+                    <option value="canny">Canny Edge - Chất lượng cao nhất</option>
+                    <option value="sobel">Sobel Edge - Nhanh, đơn giản</option>
+                    <option value="laplacian">Laplacian Edge - Mọi hướng</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <!-- Enhancement Options -->
+        <div class="form-group">
+            <label class="label">Tùy chọn nâng cao:</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="enhance" value="denoise" checked>
+                    <span>Denoise - Loại bỏ nhiễu</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="enhance" value="connect">
+                    <span>Connect Lines - Nối đường gãy</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="enhance" value="thin">
+                    <span>Thin Lines - Làm mỏng nét</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="enhance" value="thicken">
+                    <span>Thicken Lines - Làm đậm nét</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Process Button -->
+        <button id="process-btn" class="btn-primary" disabled>
+            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Xử lý ảnh
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <p class="loading-text">Đang xử lý ảnh...</p>
+        <p class="loading-subtext">Vui lòng đợi trong giây lát</p>
+    </div>
+
+    <!-- Error/Success Messages -->
+    <div id="message" class="message hidden"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+{% endblock %}
