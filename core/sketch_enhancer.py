@@ -1,14 +1,21 @@
 """
 Sketch Enhancement Module
 Implements denoise operation to enhance sketch quality
+Sử dụng morphological operations tự implement
 """
 
-import cv2
 import numpy as np
+from .algorithms import MorphologicalOperations
 
 
 class SketchEnhancer:
-    """Class nâng cao chất lượng sketch bằng morphological denoising"""
+    """
+    Class nâng cao chất lượng sketch bằng morphological denoising
+    """
+
+    def __init__(self):
+        """Khởi tạo với morphological operations engine"""
+        self.morph = MorphologicalOperations()
 
     def enhance(self, sketch, operations=['denoise']):
         """
@@ -36,13 +43,18 @@ class SketchEnhancer:
 
     def _denoise(self, sketch, kernel_size=3):
         """
-        Loại bỏ nhiễu bằng morphological opening
+        Loại bỏ nhiễu bằng morphological opening - TỰ IMPLEMENT
 
         Opening = Erosion + Dilation
         Loại bỏ các điểm nhiễu nhỏ trong khi giữ nguyên cấu trúc chính
+
+        Thuật toán:
+        1. Erosion: co vùng sáng, loại bỏ điểm nhỏ
+        2. Dilation: giãn lại để khôi phục kích thước ban đầu
         """
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
-                                          (kernel_size, kernel_size))
-        cleaned = cv2.morphologyEx(sketch, cv2.MORPH_OPEN, kernel)
+        kernel = self. .create_kernel('ellipse', kernel_size)
+
+        # Áp dụng opening (erosion + dilation) - TỰ IMPLEMENT
+        cleaned = self.morph.opening(sketch, kernel)
 
         return cleaned

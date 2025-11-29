@@ -1,17 +1,20 @@
 """
 Edge Detection Module
-Implements Canny edge detection algorithm
+Implements Canny edge detection algorithm from scratch
 Used for sketch conversion in Combined and Edge-Based methods
 """
 
 import cv2
 import numpy as np
+from .algorithms import CannyEdgeDetector, GaussianBlur
 
 
 class EdgeDetector:
-    """Class xử lý phát hiện biên"""
+    """
+    Class xử lý phát hiện biên
+    """
 
-    def __init__(self, method='canny'):
+    def __init__(self, method="canny"):
         """
         Parameters:
         -----------
@@ -19,6 +22,9 @@ class EdgeDetector:
             Phương pháp: 'canny' (only supported method)
         """
         self.method = method
+        # Sử dụng Canny detector tự implement
+        self.canny_detector = CannyEdgeDetector()
+        self.gaussian = GaussianBlur()
 
     def detect(self, image, **params):
         """
@@ -42,29 +48,31 @@ class EdgeDetector:
         else:
             gray = image.copy()
 
-        if self.method == 'canny':
+        if self.method == "canny":
             return self._canny(gray, **params)
         else:
-            raise ValueError(f"Unknown method: {self.method}. Only 'canny' is supported.")
+            raise ValueError(
+                f"Unknown method: {self.method}. Only 'canny' is supported."
+            )
 
     def _canny(self, image, low_threshold=None, high_threshold=None):
         """
         Canny edge detection with adaptive thresholding
 
-        Thuật toán tốt nhất với 4 bước:
-        1. CLAHE preprocessing để cải thiện vùng sáng
-        2. Gaussian smoothing
-        3. Gradient calculation
-        4. Non-maximum suppression
-        5. Adaptive hysteresis thresholding
+        Thuật toán Canny tự implement gồm 5 bước:
+        1. Gaussian smoothing - giảm nhiễu
+        2. Gradient calculation (Sobel) - tính đạo hàm
+        3. Non-maximum suppression - làm mỏng biên
+        4. Double thresholding - phân loại biên
+        5. Hysteresis - nối các biên
 
-        Nếu không cung cấp threshold, sẽ tự động tính dựa trên median
+        vì đây là các thuật toán phức tạp không phải trọng tâm
         """
-        # Apply CLAHE để cải thiện contrast vùng sáng
+        # Preprocessing: CLAHE để cải thiện contrast vùng sáng
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(image)
 
-        # Apply bilateral filter để giảm nhiễu nhưng giữ edges
+        # Bilateral filter để giảm nhiễu nhưng giữ edges
         denoised = cv2.bilateralFilter(enhanced, 9, 75, 75)
 
         # Adaptive thresholding based on image statistics
@@ -80,10 +88,16 @@ class EdgeDetector:
             low_threshold = max(30, low_threshold)
             high_threshold = min(200, high_threshold)
 
-        edges = cv2.Canny(denoised, low_threshold, high_threshold)
+        edges = self.canny_detector.detect(
+            denoised,
+            low_threshold=low_threshold,
+            high_threshold=high_threshold,
+            blur_ksize=5,
+            blur_sigma=1.4,
+            sobel_ksize=3,
+        )
 
-        # Apply very light Gaussian blur for anti-aliasing only
-        # Chỉ làm mượt nhẹ để giảm pixel, không làm mờ
-        edges_smooth = cv2.GaussianBlur(edges, (3, 3), 0.3)
+        # Post-processing: Gaussian blur nhẹ để anti-aliasing
+        edges_smooth = self.gaussian.blur(edges, ksize=3, sigma=0.3)
 
         return edges_smooth
