@@ -4,7 +4,7 @@
 
 ## Tổng quan
 
-SketchLab là một ứng dụng web Flask cho phép người dùng chuyển đổi ảnh thành sketch (ảnh vẽ phác thảo). Điểm đặc biệt của dự án là **các thuật toán core được tự implement** thay vì sử dụng hoàn toàn các hàm có sẵn của OpenCV.
+SketchLab là một ứng dụng web Flask cho phép người dùng chuyển đổi ảnh thành sketch (ảnh vẽ phác thảo) bằng các thuật toán xử lý ảnh cơ bản.
 
 Dự án được xây dựng dựa trên kiến thức từ học phần **Xử lý ảnh (INT13146)** - Học viện Công nghệ Bưu chính Viễn thông.
 
@@ -18,9 +18,9 @@ Dự án được xây dựng dựa trên kiến thức từ học phần **Xử
 - **Preview**: So sánh side-by-side giữa ảnh gốc và sketch
 - **Download**: Tải về ảnh đã xử lý
 
-## Thuật toán tự implement
+## Thuật toán xử lý ảnh
 
-Thay vì sử dụng hoàn toàn các hàm có sẵn của OpenCV, dự án tự implement các thuật toán core:
+Dự án sử dụng các thuật toán xử lý ảnh cơ bản:
 
 ### 1. Convolution2D (`core/algorithms/convolution.py`)
 
@@ -35,18 +35,18 @@ G(x,y) = ΣΣ K(i,j) × I(x+i, y+j)
 
 ### 2. GaussianBlur (`core/algorithms/gaussian_blur.py`)
 
-Làm mờ Gaussian - thay thế `cv2.GaussianBlur`:
+Làm mờ Gaussian:
 
 ```
 G(x,y) = (1/2πσ²) × e^(-(x²+y²)/2σ²)
 ```
 
-- Tự tính kernel từ công thức toán học
+- Tính kernel từ công thức toán học
 - Sử dụng separable convolution để tối ưu
 
 ### 3. SobelOperator (`core/algorithms/sobel.py`)
 
-Toán tử Sobel tính gradient - thay thế `cv2.Sobel`:
+Toán tử Sobel tính gradient:
 
 ```
 Gx = [[-1,0,1], [-2,0,2], [-1,0,1]]
@@ -59,7 +59,7 @@ Gy = [[-1,-2,-1], [0,0,0], [1,2,1]]
 
 ### 4. CannyEdgeDetector (`core/algorithms/canny.py`)
 
-Thuật toán Canny đầy đủ 5 bước - thay thế `cv2.Canny`:
+Thuật toán Canny đầy đủ 5 bước:
 
 1. **Gaussian smoothing** - Giảm nhiễu
 2. **Gradient calculation** - Tính đạo hàm bằng Sobel
@@ -69,19 +69,11 @@ Thuật toán Canny đầy đủ 5 bước - thay thế `cv2.Canny`:
 
 ### 5. MorphologicalOperations (`core/algorithms/morphology.py`)
 
-Các phép toán hình thái học - thay thế `cv2.morphologyEx`:
+Các phép toán hình thái học:
 
 - **Erosion**: Thu nhỏ vùng sáng - `output = MIN(region)`
 - **Dilation**: Mở rộng vùng sáng - `output = MAX(region)`
 - **Opening**: Erosion → Dilation (loại bỏ nhiễu)
-
-### Các hàm OpenCV được giữ lại
-
-Một số hàm phức tạp không phải trọng tâm vẫn sử dụng OpenCV:
-
-- `cv2.cvtColor()` - Chuyển đổi không gian màu
-- `cv2.createCLAHE()` - Adaptive histogram equalization
-- `cv2.bilateralFilter()` - Edge-preserving smoothing
 
 ## Công nghệ
 
@@ -157,13 +149,18 @@ SketchLab/
 │   ├── sketch_enhancer.py          # SketchEnhancer class
 │   ├── utils.py                    # Helper functions
 │   │
-│   └── algorithms/                 # Thuật toán tự implement
+│   └── algorithms/                 # Thuật toán xử lý ảnh
 │       ├── __init__.py
 │       ├── convolution.py          # Convolution2D
 │       ├── gaussian_blur.py        # GaussianBlur
 │       ├── sobel.py                # SobelOperator
 │       ├── canny.py                # CannyEdgeDetector
 │       └── morphology.py           # MorphologicalOperations
+│
+├── docs/                           # Tài liệu báo cáo
+│   ├── BAO_CAO_SLIDE.md            # Báo cáo slide
+│   ├── generate_images.py          # Script tạo hình minh họa
+│   └── images/                     # Hình ảnh minh họa
 │
 ├── templates/                      # HTML templates
 │   ├── base.html
@@ -174,6 +171,8 @@ SketchLab/
 └── static/
     ├── css/style.css
     ├── js/
+    │   ├── main.js
+    │   └── upload.js
     └── uploads/                    # Temporary files
         ├── original/
         └── processed/
@@ -185,12 +184,12 @@ SketchLab/
 
 ```python
 # Các bước:
-1. CLAHE preprocessing (cv2)
+1. CLAHE preprocessing
 2. Invert: inverted = 255 - image
-3. Gaussian Blur: blurred = GaussianBlur(inverted)  # Tự implement
+3. Gaussian Blur: blurred = GaussianBlur(inverted)
 4. Invert blur: inv_blur = 255 - blurred
 5. Divide: sketch = (image × 256) / inv_blur
-6. Post-processing: GaussianBlur nhẹ  # Tự implement
+6. Post-processing: GaussianBlur nhẹ
 ```
 
 ### Combined Sketch
@@ -198,12 +197,12 @@ SketchLab/
 ```python
 # Kết hợp dodge-burn và edge detection:
 1. sketch_db = DodgeBurn(image)
-2. edges = CannyEdgeDetector(image)  # Tự implement
+2. edges = CannyEdgeDetector(image)
 3. result = 0.9 × sketch_db + 0.1 × edges
 4. Post-processing với gamma correction
 ```
 
-### Canny Edge Detection (Tự implement)
+### Canny Edge Detection
 
 ```python
 # 5 bước của thuật toán Canny:
@@ -259,12 +258,6 @@ Kiểm tra kích thước file (max 16MB) hoặc tăng `MAX_CONTENT_LENGTH` tron
 - Canny, J. - A Computational Approach to Edge Detection (1986)
 - [OpenCV Documentation](https://docs.opencv.org/)
 - Đề cương học phần Xử lý ảnh - INT13146
-
-## Tác giả
-
-Dự án học phần **Xử lý ảnh (INT13146)**
-Học viện Công nghệ Bưu chính Viễn thông
-Năm 2025
 
 ## License
 
