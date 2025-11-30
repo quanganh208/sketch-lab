@@ -17,7 +17,7 @@ class SketchEnhancer:
         """Khởi tạo với morphological operations engine"""
         self.morph = MorphologicalOperations()
 
-    def enhance(self, sketch, operations=['denoise']):
+    def enhance(self, sketch, operations=["denoise"]):
         """
         Nâng cao chất lượng sketch bằng denoise
 
@@ -36,7 +36,7 @@ class SketchEnhancer:
         result = sketch.copy()
 
         for op in operations:
-            if op == 'denoise':
+            if op == "denoise":
                 result = self._denoise(result)
 
         return result
@@ -52,7 +52,7 @@ class SketchEnhancer:
         1. Erosion: co vùng sáng, loại bỏ điểm nhỏ
         2. Dilation: giãn lại để khôi phục kích thước ban đầu
         """
-        kernel = self. .create_kernel('ellipse', kernel_size)
+        kernel = self.morph.create_kernel("ellipse", kernel_size)
 
         # Áp dụng opening (erosion + dilation) - TỰ IMPLEMENT
         cleaned = self.morph.opening(sketch, kernel)
